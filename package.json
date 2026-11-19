@@ -8,7 +8,7 @@
 
   "scripts": {
     "postinstall": "electron-builder install-app-deps",
-    "build": "echo \"replace with your real build command, e.g. tsc / vite build\"",
+    "build": "node scripts/build.js",
     "dist": "npm run build && electron-builder --win --x64 --publish never",
     "dist:dir": "npm run build && electron-builder --win --x64 --dir",
     "rebuild:native": "electron-builder install-app-deps"
