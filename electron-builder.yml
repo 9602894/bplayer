@@ -7,7 +7,11 @@ directories:
 
 files:
   - "**/*"
+  - "!.libmpv/**/*"
   - "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}"
+  - "!**/node_modules/.cache"
+  - "!**/*.ts"
+  - "!**/*.map"
 
 asar: true
 
@@ -16,7 +20,7 @@ asarUnpack:
   - "**/*.node"
 
 extraResources:
-  - from: "${env.LIBMPV_DIR}/bin/libmpv-2.dll"
+  - from: ".libmpv/bin/libmpv-2.dll"
     to: "libmpv/libmpv-2.dll"
 
 win:
