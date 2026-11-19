@@ -10,11 +10,13 @@ on:
 jobs:
   build-windows:
     runs-on: windows-2022
+
     env:
       LIBMPV_DIR: ${{ github.workspace }}\.libmpv
       MPV_INCLUDE_DIR: ${{ github.workspace }}\.libmpv\include
       MPV_LIB: ${{ github.workspace }}\.libmpv\lib\mpv.lib
-      MPV_RUNTIME_DIR: ${{ github.workspace }}\.libmpv\bin   # ← 新增
+      MPV_RUNTIME_DIR: ${{ github.workspace }}\.libmpv\bin
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,7 +36,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.LIBMPV_DIR }}
-          key: libmpv-win-x64-${{ runner.os }}-20261111
+          key: libmpv-win-x64-${{ runner.os }}-v1
 
       - name: Download libmpv SDK (if cache miss)
         if: steps.cache-libmpv.outputs.cache-hit != 'true'
@@ -72,6 +74,13 @@ jobs:
         shell: pwsh
         run: npm run build
 
+      - name: Verify dist/main.js before packaging
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist/main.js")) {
+            throw "dist/main.js is missing. Check scripts/build.js and src/."
+          }
+
       - name: Package with electron-builder
         shell: pwsh
         run: npx electron-builder --win --x64 --publish never
@@ -82,5 +91,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: electron-mpv-player-win-x64
-          path: dist/*.exe
+          path: release/*.exe
           if-no-files-found: error
