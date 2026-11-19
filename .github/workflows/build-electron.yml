@@ -16,20 +16,19 @@ jobs:
       MPV_LIB: ${{ github.workspace }}\.libmpv\lib\mpv.lib
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
 
       - name: Setup Python for node-gyp
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      # 缓存 libmpv SDK，避免每次 CI 都从 GitHub Release 下载
       - name: Cache libmpv SDK
         id: cache-libmpv
         uses: actions/cache@v4
@@ -51,23 +50,33 @@ jobs:
           if (-not (Test-Path "$env:LIBMPV_DIR\bin\libmpv-2.dll")) { throw "libmpv-2.dll missing" }
 
       - name: Install JS dependencies
-        run: npm ci
+        shell: pwsh
+        run: |
+          if (Test-Path "package-lock.json") {
+            Write-Host "Found package-lock.json, running npm ci"
+            npm ci
+          } else {
+            Write-Host "No lock file, falling back to npm install"
+            npm install
+          }
 
       - name: Download Electron binary
+        shell: pwsh
         run: node node_modules/electron/install.js
 
-      # 关键：为 Electron ABI 重新编译原生模块
       - name: Rebuild native modules for Electron ABI
         shell: pwsh
         run: .\node_modules\.bin\electron-builder.cmd install-app-deps
 
       - name: Build app code
+        shell: pwsh
         run: npm run build
 
       - name: Package with electron-builder
+        shell: pwsh
         run: npx electron-builder --win --x64 --publish never
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"  # 没有签名证书时跳过签名
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
