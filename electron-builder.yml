@@ -2,7 +2,7 @@ appId: com.example.electron-mpv-player
 productName: ElectronMPVPlayer
 
 directories:
-  output: dist
+  output: release          # ← 关键修改：从 dist 改为 release
   buildResources: build
 
 files:
