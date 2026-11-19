@@ -1,0 +1,36 @@
+appId: com.example.electron-mpv-player
+productName: ElectronMPVPlayer
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - "**/*"
+  - "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}"
+  - "!**/node_modules/.cache"
+  - "!**/*.ts"
+  - "!**/*.map"
+
+asar: true
+
+asarUnpack:
+  - "**/node_modules/electron-mpv-video/**"
+  - "**/*.node"
+
+extraResources:
+  - from: "${env.LIBMPV_DIR}/bin/libmpv-2.dll"
+    to: "libmpv/libmpv-2.dll"
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: "${productName}-${version}-win-${arch}.${ext}"
+  signAndEditExecutable: false
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
