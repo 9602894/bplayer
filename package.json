@@ -1,0 +1,29 @@
+{
+  "name": "electron-mpv-player",
+  "version": "0.1.0",
+  "description": "Electron player with libmpv for stable live streaming",
+  "main": "dist/main.js",
+  "author": "Your Name",
+  "license": "MIT",
+
+  "scripts": {
+    "postinstall": "electron-builder install-app-deps",
+    "build": "echo \"replace with your real build command, e.g. tsc / vite build\"",
+    "dist": "npm run build && electron-builder --win --x64 --publish never",
+    "dist:dir": "npm run build && electron-builder --win --x64 --dir",
+    "rebuild:native": "electron-builder install-app-deps"
+  },
+
+  "dependencies": {
+    "electron-mpv-video": "^0.1.1"
+  },
+
+  "devDependencies": {
+    "electron": "^40.10.5",
+    "electron-builder": "^26.0.0"
+  },
+
+  "engines": {
+    "node": ">=22"
+  }
+}
