@@ -14,7 +14,7 @@ jobs:
       LIBMPV_DIR: ${{ github.workspace }}\.libmpv
       MPV_INCLUDE_DIR: ${{ github.workspace }}\.libmpv\include
       MPV_LIB: ${{ github.workspace }}\.libmpv\lib\mpv.lib
-
+      MPV_RUNTIME_DIR: ${{ github.workspace }}\.libmpv\bin   # ← 新增
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
