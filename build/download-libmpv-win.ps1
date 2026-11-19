@@ -19,12 +19,12 @@ Write-Host "Downloading: $($asset.browser_download_url)"
 $archive = Join-Path $env:TEMP $asset.name
 Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $archive
 
-# 2) 解压到临时目录，避免直接污染目标目录
+# 2) 解压到临时目录
 $tempDir = Join-Path $env:TEMP "libmpv-extract-$([guid]::NewGuid().ToString('N'))"
 New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
 7z x $archive -o"$tempDir" -y | Out-Null
 
-# 3) 递归定位关键文件（包内布局可能不固定）
+# 3) 递归定位关键文件
 Write-Host "Locating libmpv files in extracted archive..."
 $dll      = Get-ChildItem $tempDir -Recurse -Filter "libmpv-2.dll" | Select-Object -First 1
 $header   = Get-ChildItem $tempDir -Recurse -Filter "client.h" | Where-Object { $_.DirectoryName -like "*mpv*" } | Select-Object -First 1
@@ -35,14 +35,15 @@ $mpvLib   = Get-ChildItem $tempDir -Recurse -Filter "mpv.lib" | Select-Object -F
 if (-not $dll)    { throw "libmpv-2.dll not found in archive." }
 if (-not $header) { throw "mpv/client.h not found in archive." }
 
-# 4) 按 electron-mpv-video 的约定重组目录：include / lib / bin
+# 4) 重组目录
 Write-Host "Arranging SDK into $LibmpvDir ..."
 Remove-Item $LibmpvDir -Force -Recurse -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path `
   "$LibmpvDir\include\mpv", "$LibmpvDir\lib", "$LibmpvDir\bin" | Out-Null
 
-# 头文件
-Copy-Item $header.DirectoryName\* "$LibmpvDir\include\mpv" -Recurse -Force
+# 头文件 —— 修复点：用 Join-Path 拼接通配符，避免被拆成多个参数
+$headerSrc = Join-Path $header.DirectoryName "*"
+Copy-Item $headerSrc "$LibmpvDir\include\mpv" -Recurse -Force
 
 # DLL
 Copy-Item $dll.FullName "$LibmpvDir\bin\libmpv-2.dll" -Force
