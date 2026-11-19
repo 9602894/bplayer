@@ -1,0 +1,77 @@
+name: Build Electron MPV Player
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    env:
+      LIBMPV_DIR: ${{ github.workspace }}\.libmpv
+      MPV_INCLUDE_DIR: ${{ github.workspace }}\.libmpv\include
+      MPV_LIB: ${{ github.workspace }}\.libmpv\lib\mpv.lib
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Setup Python for node-gyp
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 缓存 libmpv SDK，避免每次 CI 都从 GitHub Release 下载
+      - name: Cache libmpv SDK
+        id: cache-libmpv
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.LIBMPV_DIR }}
+          key: libmpv-win-x64-${{ runner.os }}-20261111
+
+      - name: Download libmpv SDK (if cache miss)
+        if: steps.cache-libmpv.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          .\build\download-libmpv-win.ps1 -LibmpvDir "$env:LIBMPV_DIR"
+
+      - name: Verify libmpv paths
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "$env:MPV_INCLUDE_DIR\mpv\client.h")) { throw "client.h missing" }
+          if (-not (Test-Path "$env:MPV_LIB")) { throw "mpv.lib missing" }
+          if (-not (Test-Path "$env:LIBMPV_DIR\bin\libmpv-2.dll")) { throw "libmpv-2.dll missing" }
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Download Electron binary
+        run: node node_modules/electron/install.js
+
+      # 关键：为 Electron ABI 重新编译原生模块
+      - name: Rebuild native modules for Electron ABI
+        shell: pwsh
+        run: .\node_modules\.bin\electron-builder.cmd install-app-deps
+
+      - name: Build app code
+        run: npm run build
+
+      - name: Package with electron-builder
+        run: npx electron-builder --win --x64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"  # 没有签名证书时跳过签名
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-mpv-player-win-x64
+          path: dist/*.exe
+          if-no-files-found: error
